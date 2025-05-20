@@ -4,9 +4,11 @@ import (
 	"bytes"
 	"encoding/json"
 	"net/http"
+
 )
 
 type CodePayload struct {
+	Language string `json:language`
 	Code string `json:"code"`
 }
 
@@ -27,8 +29,11 @@ func ResolveExecutor(lang string) string {
 	}
 }
 
-func ForwardCode(url, code string) (*http.Response, error) {
-	payload := CodePayload{Code: code}
+func ForwardCode(url, code string, language string) (*http.Response, error) {
+	payload := CodePayload{
+		Code: code,
+		Language: language,
+	}
 	body, err := json.Marshal(payload)
 	if err != nil {
 		return nil, err

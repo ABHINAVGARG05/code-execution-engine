@@ -10,7 +10,7 @@ import (
 )
 
 type CodeRequest struct {
-	Language string `json:"language_id"`
+	Language string `json:"language"`
 	Code     string `json:"code"`
 }
 
@@ -28,7 +28,7 @@ func ExecuteCode(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp, err := utils.ForwardCode(targetURL, req.Code)
+	resp, err := utils.ForwardCode(targetURL, req.Code, req.Language)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
