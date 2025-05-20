@@ -3,7 +3,6 @@ package handler
 import (
 	"encoding/json"
 	"io"
-	"log"
 	"net/http"
 
 	"github.com/ABHINAVGARG05/code-execution-engine/api-gateway/utils"
@@ -16,12 +15,12 @@ type CodeRequest struct {
 
 func ExecuteCode(w http.ResponseWriter, r *http.Request) {
 	var req CodeRequest
-	log.Println("HI")
+	// log.Println("HI") --> For Debugging
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid JSON", http.StatusBadRequest)
 		return
 	}
-	log.Printf("Request: %s",req.Language)
+	// log.Printf("Request: %s",req.Language) --> for Testing
 	targetURL := utils.ResolveExecutor(req.Language)
 	if targetURL == "" {
 		http.Error(w, "Unsupported language: API-Gateway", http.StatusBadRequest)
@@ -34,7 +33,7 @@ func ExecuteCode(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer resp.Body.Close()
-	log.Printf("response: ",resp.Body)
+	// log.Printf("response: ",resp.Body) --> For Testing 
 	w.WriteHeader(resp.StatusCode)
 	io.Copy(w, resp.Body)
 }

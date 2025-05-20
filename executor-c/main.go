@@ -9,14 +9,13 @@ import (
 	"github.com/ABHINAVGARG05/code-execution-engine/executor-lib"
 )
 
-// Request format
 type CodeRequest struct {
 	Code     string `json:"code"`
 	Language string `json:"language"`
 }
 
 func handleCodeExecution(w http.ResponseWriter, r *http.Request) {
-	log.Print("hi")
+	// log.Print("hi") --> For Debugging
 	if r.Method != http.MethodPost {
 		http.Error(w, "Only POST allowed", http.StatusMethodNotAllowed)
 		return
@@ -34,8 +33,8 @@ func handleCodeExecution(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid JSON format", http.StatusBadRequest)
 		return
 	}
-	log.Printf("Body: %s",body);
-	log.Printf("Language: %s",req.Language);
+	// log.Printf("Body: %s",body); --> For Debugging
+	// log.Printf("Language: %s",req.Language); --> For Debugging
 	config, ok := executor.LanguageConfigs[req.Language]
 	if !ok {
 		http.Error(w, "Unsupported language", http.StatusBadRequest)
