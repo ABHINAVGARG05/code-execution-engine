@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 )
 
 func RunCode(code string, config ExecutionConfig) (string, error) {
@@ -12,29 +13,26 @@ func RunCode(code string, config ExecutionConfig) (string, error) {
 	}
 
 	if config.UseCompiler {
-		if out, err := exec.Command(config.CompileCmd[0], config.CompileCmd[1:]...).CombinedOutput(); err != nil {
+		compileCmd := exec.Command(config.CompileCmd[0], config.CompileCmd[1:]...)
+		compileCmd.Dir, _ = filepath.Abs(".")
+		if out, err := compileCmd.CombinedOutput(); err != nil {
 			return string(out), fmt.Errorf("compilation failed: %v", err)
 		}
-		_ = exec.Command("cp", config.BinaryName, "/sandbox/"+config.BinaryName).Run()
-		_ = exec.Command("chmod", "+x", "/sandbox/"+config.BinaryName).Run()
 	} else {
-		_ = exec.Command("cp", config.Filename, "/sandbox/"+config.Filename).Run()
+		_ = os.Chmod(config.Filename, 0755)
 	}
 
-	args := []string{
-		"--quiet", "--mode", "o", "--chroot", "/sandbox",
-		"--user", "9999", "--group", "9999",
-		"--rlimit_as", "256", "--time_limit", "3",
-		"--disable_proc",
-	}
-
-	if config.UseCompiler {
-		args = append(args, "--exec_bin", "/"+config.BinaryName, "--", "/"+config.BinaryName)
+	var cmd *exec.Cmd
+	if len(config.RunCmd) > 0 {
+		cmd = exec.Command(config.RunCmd[0], config.RunCmd[1:]...)
+	} else if config.UseCompiler {
+		cmd = exec.Command("./" + config.BinaryName)
 	} else {
-		args = append(args, "--exec_bin", "/"+config.Interpreter, "--", "/"+config.Interpreter, config.Filename)
+		cmd = exec.Command(config.Interpreter, config.Filename)
 	}
 
-	cmd := exec.Command("nsjail", args...)
+	cmd.Dir, _ = filepath.Abs(".")
+
 	out, err := cmd.CombinedOutput()
 	return string(out), err
 }

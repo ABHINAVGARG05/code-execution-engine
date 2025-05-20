@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  executor-c:
+    build:
+      context: ./executor-c
+    container_name: executor-c
+    ports:
+      - "5001:5001"
+    volumes:
+      - ../executor-lib:/app/executor-lib 
+    networks:
+      - execnet
+
+  api-gateway:
+    build:
+      context: ./api-gateway
+    container_name: api-gateway
+    ports:
+      - "8080:8080"
+    depends_on:
+      - executor-c
+    networks:
+      - execnet
+
+networks:
+  execnet:
+    driver: bridge

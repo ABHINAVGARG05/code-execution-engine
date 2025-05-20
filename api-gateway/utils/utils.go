@@ -2,21 +2,36 @@ package utils
 
 import (
 	"bytes"
+	"encoding/json"
 	"net/http"
-	"strings"
 )
+
+type CodePayload struct {
+	Code string `json:"code"`
+}
 
 func ResolveExecutor(lang string) string {
 	switch lang {
 	case "c":
-		return "http://executor-c:5004/run"
+		return "http://localhost:5001/run-c"
+	case "cpp":
+		return "http://executor-cpp:5002/run"
+	case "java":
+		return "http://executor-java:5003/run"
+	case "python":
+		return "http://executor-python:5004/run"
+	case "go":
+		return "http://executor-go:5005/run"
 	default:
 		return ""
 	}
 }
 
-func ForwardCode(url string, code string) (*http.Response, error) {
-	escaped := strings.ReplaceAll(code, `"`, `\"`)
-	payload := []byte(`{"code":"` + escaped + `"}`)
-	return http.Post(url, "application/json", bytes.NewBuffer(payload))
+func ForwardCode(url, code string) (*http.Response, error) {
+	payload := CodePayload{Code: code}
+	body, err := json.Marshal(payload)
+	if err != nil {
+		return nil, err
+	}
+	return http.Post(url, "application/json", bytes.NewReader(body))
 }
