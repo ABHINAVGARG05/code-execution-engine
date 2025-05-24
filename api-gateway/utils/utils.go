@@ -1,42 +1,58 @@
 package utils
 
 import (
-	"bytes"
+	"context"
 	"encoding/json"
-	"net/http"
+	"errors"
+	"log"
+	"time"
 
+	"github.com/ABHINAVGARG05/code-execution-engine/executor-lib"
+	"github.com/redis/go-redis/v9"
 )
 
 type CodePayload struct {
-	Language string `json:language`
-	Code string `json:"code"`
+	Language string `json:"language"`
+	Code     string `json:"code"`
 }
 
-func ResolveExecutor(lang string) string {
-	switch lang {
-	case "c":
-		return "http://localhost:5001/run-c"
-	case "cpp":
-		return "http://executor-cpp:5002/run"
-	case "java":
-		return "http://executor-java:5003/run"
-	case "python":
-		return "http://executor-python:5004/run"
-	case "go":
-		return "http://executor-go:5005/run"
-	default:
-		return ""
-	}
+type CodeExecutionJob struct {
+	Code   string
+	Config executor.ExecutionConfig
 }
 
-func ForwardCode(url, code string, language string) (*http.Response, error) {
-	payload := CodePayload{
-		Code: code,
-		Language: language,
+var ctx = context.Background()
+
+var rdb = redis.NewClient(&redis.Options{
+	Addr: "localhost:6379",
+})
+
+func EnqueueCodeJob(code string, language string) error {
+	config, ok := executor.LanguageConfigs[language]
+	if !ok {
+		return errors.New("unsupported language")
 	}
-	body, err := json.Marshal(payload)
+
+	job := CodeExecutionJob{
+		Code:   code,
+		Config: config,
+	}
+
+	data, err := json.Marshal(job)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	return http.Post(url, "application/json", bytes.NewReader(body))
+	log.Println("Before1");
+	log.Println(data);
+	result, err := rdb.BRPop(ctx, 5*time.Second, "code_execution_queue").Result()
+	
+		if err != nil {
+			log.Println("Redis BRPop error:", err)
+		}
+		log.Println(result);
+		if len(result) < 2 {
+			log.Println("redis connected", result)
+		}
+		log.Println("Code enqued and redis connected");
+	return rdb.LPush(ctx, "code_execution_queue", data).Err()
 }
